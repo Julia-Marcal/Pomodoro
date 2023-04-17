@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useInterval } from '../hooks/use-interval';
 import { secondsToTime } from '../utils/seconds-to-time';
 import { Button } from './button';
@@ -30,26 +30,44 @@ export function PomodoroTimer(props: Props): JSX.Element {
   const [FullWorkingTime, setFullWorkingTime] = useState(0);
   const [numberOfPomodoros, setNumberOfPomodoros] = useState(0);
 
-  const configureWork = () => {
+  useInterval(
+    () => {
+      setMainTime(mainTime - 1);
+      if (working) setFullWorkingTime(FullWorkingTime + 1);
+    },
+    timeCounting ? 1000 : null,
+  );
+
+  const configureWork = useCallback(() => {
     setTimeCouting(true);
     setWorking(true);
     setResting(false);
     setMainTime(props.PomodoroTime);
     audioStartWorking.play();
-  };
+  }, [setTimeCouting, setWorking, setResting, setMainTime, props.PomodoroTime]);
 
-  const configureRest = (Long: boolean) => {
-    setTimeCouting(true);
-    setWorking(false);
-    setResting(true);
-    if (Long) {
-      setMainTime(props.LongRestTime);
-    } else {
-      setMainTime(props.ShortRestTime);
-    }
+  const configureRest = useCallback(
+    (Long: boolean) => {
+      setTimeCouting(true);
+      setWorking(false);
+      setResting(true);
+      if (Long) {
+        setMainTime(props.LongRestTime);
+      } else {
+        setMainTime(props.ShortRestTime);
+      }
 
-    audioStopWorking.play();
-  };
+      audioStopWorking.play();
+    },
+    [
+      setTimeCouting,
+      setWorking,
+      setResting,
+      setMainTime,
+      props.LongRestTime,
+      props.ShortRestTime,
+    ],
+  );
 
   useEffect(() => {
     if (working) document.body.classList.add('working');
@@ -80,16 +98,9 @@ export function PomodoroTimer(props: Props): JSX.Element {
     props.cycles,
   ]);
 
-  useInterval(
-    () => {
-      setMainTime(mainTime - 1);
-    },
-    timeCounting ? 1000 : null,
-  );
-
   return (
     <div className="pomodoro">
-      <h2>You are: working</h2>
+      <h2>Voce está: {working ? 'Trabalhando' : 'Descansando'}</h2>
       <Timer mainTime={mainTime} />
 
       <div className="controls">
